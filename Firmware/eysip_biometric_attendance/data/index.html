@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>EYSIP ATTENDANCE</title>
+    <style>
+        * {
+            font-family: Arial, Helvetica, sans-serif;
+            box-sizing: border-box;
+        }
+
+        table {
+            margin: 10px;
+            margin-bottom: 10px;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table tr:nth-child(odd) {
+            background: #f2f2f2;
+        }
+
+        table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        table tr:nth-child(n+2) td:nth-child(5) {
+            cursor: pointer;
+            background-color: green;
+            border-radius: 5px;
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- FILE PICKER -->
+    
+    <h1>EYSIP ATTENDANCE</h1>
+    <!-- DISPLAY CSV HERE -->
+    <div style="margin-bottom: 20px;">
+        <label for="server-ip">Server IP:</label>
+        <input type="text" id="server-ip" placeholder="Enter server IP" value="http://192.168.0.102/enroll">
+        <button onclick="updateServerIP()">Update</button>
+    </div>
+
+    <table id="table"></table>
+
+    <script>
+
+        const csvUrl = "https://docs.google.com/spreadsheets/d/1AxonN8zQ13o75t8qmSzUVAp1pmrbt7sMMXO5xpnx8FM/gviz/tq?tqx=out:csv&sheet=Sheet1";
+        // const serverUrl = document
+        const serverUrl = document.getElementById("server-ip").value;
+        let csv = null;
+
+        function updateServerIP() {
+            const ipInput = document.getElementById("server-ip").value;
+            if (ipInput) {
+                serverIP = ipInput;
+                alert(`Server IP updated to: ${serverIP}`);
+            } else {
+                alert("Please enter a valid IP address.");
+            }
+        }
+
+        window.onload = async () => {
+            // FILE READER + HTML ELEMENTS
+            var table = document.getElementById("table");
+            csv = await getCsv();
+            table.innerHTML = "";
+
+            // SPLIT INTO ROWS
+            let rows = csv.join("\n").split("\n");
+            // LOOP THROUGH ROWS + SPLIT COLUMNS 
+            for (let row of rows) {
+                let cols = row.match(/(?:\"([^\"]*(?:\"\"[^\"]*)*)\")|([^\",]+)/g);
+                if (cols != null) {
+                    let tr = table.insertRow();
+                    cols.push('Enroll');
+                    for (let col of cols) {
+                        let td = tr.insertCell();
+                        if (col === 'Enroll') {
+                            td.id = cols[0];
+                        }
+                        td.innerHTML = col.replace(/(^"|"$)/g, "");
+
+                    }
+                }
+            }
+            // adding click event
+            const elements = document.querySelectorAll("#table td:nth-child(5)");
+            //Then, we loop through those elements
+            for (let i = 1; i < elements.length; i++) {
+                elements[i].addEventListener("click", printEnroll);
+            }
+        };
+
+
+        let printEnroll = function printEnroll() {
+            let userId = event.target.id;
+            userId = userId.replace(/(^"|"$)/g, "");
+            let Resquest = fetch(`${serverUrl}?userId=${userId}`);
+        }
+        let getCsv = async function getCSV() {
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+                let csvText = await response.text();
+                let csvArray = csvText.split("\n").map(row => row.split(","));
+                
+                return csvArray;
+            } catch (error) {
+                console.error(error.message);
+            }
+        }
+
+    </script>
+</body>
+
+</html>
